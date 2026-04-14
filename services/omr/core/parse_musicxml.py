@@ -34,6 +34,48 @@ def generate_demo_score(score_id: str, title: str = "반짝반짝 작은 별") -
     return {"id": score_id, "title": title, "bpm": 100, "key": "C", "timeSignature": "4/4", "notes": notes}
 
 
+# ─── 경량 OMR JSON → 색깔악보 ─────────────────────────────────
+
+def build_score_from_notes(
+    raw_notes: List[Dict],
+    score_id: str,
+    title: str = "악보",
+    beats_per_measure: int = 4,
+) -> Dict[str, Any]:
+    """
+    경량 OMR(OpenCV) 결과를 색깔악보 JSON으로 변환한다.
+    raw_notes: [{"pitch": "C4", "x": 100, "y": 200, "duration": 0.5}, ...]
+    """
+    # 음표를 마디와 박자로 배치
+    notes_out = []
+    measure = 1
+    beat_in_measure = 1.0
+
+    for i, rn in enumerate(raw_notes):
+        pitch = rn["pitch"]
+        dur = rn.get("duration", 0.5)
+
+        cn = colorize_note(pitch, i, dur, measure, beat_in_measure)
+        notes_out.append(cn)
+
+        beat_in_measure += dur * 2  # duration 0.5 = 1박
+        if beat_in_measure > beats_per_measure:
+            measure += 1
+            beat_in_measure = 1.0
+
+    # 키 분석: 가장 많이 나오는 음 기준
+    key = "C"
+
+    return {
+        "id": score_id,
+        "title": title,
+        "bpm": 100,
+        "key": key,
+        "timeSignature": f"{beats_per_measure}/4",
+        "notes": notes_out,
+    }
+
+
 # ─── MusicXML → 색깔악보 JSON ─────────────────────────────────
 
 def parse_musicxml(xml_path: str, score_id: str, title: str = "악보") -> Dict[str, Any]:

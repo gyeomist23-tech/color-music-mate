@@ -14,7 +14,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 
 from core.preprocess import save_preprocessed
-from core.parse_musicxml import generate_demo_score, parse_musicxml
+from core.parse_musicxml import generate_demo_score, parse_musicxml, build_score_from_notes
 from core.run_oemer import run_oemer
 from core.colorize import transpose_score, KEY_ROOT, MAJOR_INTERVALS
 
@@ -74,35 +74,48 @@ async def process_image(job_id: str, filepath: str):
         except Exception as e:
             job["message"] = f"전처리 건너뜀 (원본 사용): {e}"
 
-        # ── 2단계: oemer OMR ──────────────────────────────
+        # ── 2단계: 경량 OMR (OpenCV) ─────────────────────
         job["progress"] = 30
-        job["message"] = "악보를 인식하고 있습니다... (AI 분석 중, 5~10분 소요)"
+        job["message"] = "악보를 인식하고 있습니다..."
 
         omr_output_dir = str(PROCESSED_DIR / job_id)
         score_id = str(uuid.uuid4())
 
         try:
-            logger.info(f"[{job_id}] oemer 시작: {preprocessed_path}")
-            xml_path = await loop.run_in_executor(
-                None, run_oemer, preprocessed_path, omr_output_dir
+            # 경량 OMR은 원본 이미지를 직접 사용 (전처리 이진화가 오선 감지를 방해)
+            logger.info(f"[{job_id}] OMR 시작: {filepath}")
+            result_path = await loop.run_in_executor(
+                None, run_oemer, filepath, omr_output_dir
             )
-            logger.info(f"[{job_id}] oemer 완료: {xml_path}")
+            logger.info(f"[{job_id}] OMR 완료: {result_path}")
 
-            # ── 3단계: MusicXML 파싱 ─────────────────────
+            # ── 3단계: 결과 파싱 ─────────────────────────
             job["progress"] = 80
             job["message"] = "음표를 분석하고 색깔악보로 변환하고 있습니다..."
 
             img_title = Path(filepath).stem
-            score_data = await loop.run_in_executor(
-                None, parse_musicxml, xml_path, score_id, img_title
-            )
+
+            if result_path.endswith(".json"):
+                # 경량 OMR 결과 (JSON)
+                import json as json_mod
+                with open(result_path) as f:
+                    omr_data = json_mod.load(f)
+                score_data = build_score_from_notes(
+                    omr_data["notes"], score_id, img_title
+                )
+            else:
+                # MusicXML 결과 (oemer)
+                score_data = await loop.run_in_executor(
+                    None, parse_musicxml, result_path, score_id, img_title
+                )
+
             logger.info(f"[{job_id}] 파싱 완료: {len(score_data.get('notes', []))}개 음표")
 
         except Exception as omr_err:
             import traceback
             logger.error(f"[{job_id}] OMR 실패: {omr_err}")
             logger.error(traceback.format_exc())
-            # oemer 실패 시 데모 악보로 fallback
+            # OMR 실패 시 데모 악보로 fallback
             job["message"] = f"OMR 인식 실패 (기본 악보 사용): {omr_err}"
             score_data = generate_demo_score(score_id)
 
