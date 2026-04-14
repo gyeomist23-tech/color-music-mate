@@ -14,11 +14,9 @@ def run_oemer(image_path: str, output_dir: str) -> str:
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
-    # venv310의 oemer 실행
-    venv_python = Path(__file__).parent.parent / "venv310" / "bin" / "python"
-
+    # 현재 Python 인터프리터로 oemer 실행 (Docker 및 로컬 모두 호환)
     cmd = [
-        str(venv_python), "-m", "oemer.ete",
+        sys.executable, "-m", "oemer.ete",
         image_path,
         "-o", str(output_path),
     ]
