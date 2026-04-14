@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Next.js (프런트엔드)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "apps/color-music-mate",
+      "port": 3000
+    },
+    {
+      "name": "FastAPI (OMR 백엔드)",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "/Users/gimmugyeom/Desktop/2026\\ Project_ai/\\(앱\\)\\ Color\\ Music\\ Mate/services/omr/venv310/bin/python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000"],
+      "cwd": "services/omr",
+      "port": 8000
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+# Python
+venv/
+venv310/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+uploads/
+processed/
+
+# Node
+node_modules/
+.next/
+.env.local
+
+# OS
+.DS_Store
+*.swp
+
+# IDE
+.vscode/
+.idea/
