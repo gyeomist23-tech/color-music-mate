@@ -17,31 +17,13 @@ COPY requirements-prod.txt .
 RUN pip install --no-cache-dir -r requirements-prod.txt
 
 # oemer 모델 다운로드
-RUN python -c "\
-import urllib.request, os; \
-base = 'https://github.com/BreezeWhite/oemer/releases/download/checkpoints'; \
-from oemer import MODULE_PATH; \
-os.makedirs(f'{MODULE_PATH}/checkpoints/unet_big', exist_ok=True); \
-os.makedirs(f'{MODULE_PATH}/checkpoints/seg_net', exist_ok=True); \
-urllib.request.urlretrieve(f'{base}/1st_model.onnx', f'{MODULE_PATH}/checkpoints/unet_big/model.onnx'); \
-urllib.request.urlretrieve(f'{base}/2nd_model.onnx', f'{MODULE_PATH}/checkpoints/seg_net/model.onnx'); \
-print('모델 다운로드 완료')"
+RUN python -c "import urllib.request, os; from oemer import MODULE_PATH; base='https://github.com/BreezeWhite/oemer/releases/download/checkpoints'; os.makedirs(f'{MODULE_PATH}/checkpoints/unet_big', exist_ok=True); os.makedirs(f'{MODULE_PATH}/checkpoints/seg_net', exist_ok=True); urllib.request.urlretrieve(f'{base}/1st_model.onnx', f'{MODULE_PATH}/checkpoints/unet_big/model.onnx'); urllib.request.urlretrieve(f'{base}/2nd_model.onnx', f'{MODULE_PATH}/checkpoints/seg_net/model.onnx'); print('모델 다운로드 완료')"
 
-# numpy 호환성 패치
-RUN python -c "\
-import site, os; \
-sp = site.getsitepackages()[0]; \
-files = [f'{sp}/oemer/staffline_extraction.py', f'{sp}/oemer/symbol_extraction.py', f'{sp}/oemer/bbox.py']; \
-patches = [('dtype=np.int)', 'dtype=int)'), ('np.int(unit_size//2)', 'int(unit_size//2)')]; \
-import re; \
-for f in files:\
-    txt = open(f).read();\
-    for old, new in patches:\
-        txt = txt.replace(old, new);\
-    txt = txt.replace('    model = AgglomerativeClustering', '    if len(bboxes) <= 1:\\n        return list(bboxes)\\n    model = AgglomerativeClustering', 1);\
-    open(f, 'w').write(txt);\
-print('패치 완료')"
+# numpy/sklearn 호환성 패치
+COPY patch_oemer.py .
+RUN python patch_oemer.py
 
+# 앱 소스 복사
 COPY . .
 
 EXPOSE 8000
