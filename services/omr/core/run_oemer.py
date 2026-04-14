@@ -305,21 +305,29 @@ def assign_pitches(
 
 
 def _step_to_pitch(step: int) -> str:
-    """오선 맨 아래줄(E4) 기준 반 칸 step → 음높이"""
-    # step 0 = E4 (맨 아래 줄)
-    # step 1 = F4 (첫 번째 칸)
-    # step 2 = G4 (아래서 두 번째 줄)
-    # ...
-    pitch_map = {
-        -4: "C3", -3: "D3", -2: "E3", -1: "F3",
-        0: "G3", 1: "A3", 2: "B3",
-        3: "C4", 4: "D4",
-        5: "E4", 6: "F4", 7: "G4", 8: "A4", 9: "B4",
-        10: "C5", 11: "D5", 12: "E5", 13: "F5",
-        14: "G5", 15: "A5", 16: "B5", 17: "C6",
-    }
-    if step < -4:
-        return "C3"
-    if step > 17:
-        return "C6"
-    return pitch_map.get(step, "C4")
+    """
+    오선 맨 아래줄(E4) 기준, 반 칸 step → 음높이
+    step 0 = E4 (맨 아래 줄, 높은음자리표)
+    step 1 = F4 (첫 번째 칸)
+    step 2 = G4 (아래서 두 번째 줄)
+    step 3 = A4, step 4 = B4
+    step 5 = C5 (가운데 줄 위 칸)
+    step 6 = D5 (위에서 두 번째 줄)
+    step 7 = E5, step 8 = F5 (맨 위 줄)
+    """
+    # 절대 음높이 배열: C3부터 시작
+    all_pitches = [
+        "C3", "D3", "E3", "F3", "G3", "A3", "B3",
+        "C4", "D4",
+        "E4",  # ← step 0 = index 9
+        "F4", "G4", "A4", "B4",
+        "C5", "D5", "E5", "F5",
+        "G5", "A5", "B5", "C6",
+    ]
+    base_index = 9  # E4의 인덱스
+    idx = base_index + step
+    if idx < 0:
+        return all_pitches[0]
+    if idx >= len(all_pitches):
+        return all_pitches[-1]
+    return all_pitches[idx]

@@ -44,6 +44,9 @@ async def upload_image(background_tasks: BackgroundTasks, file: UploadFile = Fil
     with open(filepath, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
+    # 원본 파일명에서 제목 추출 (확장자 제거)
+    original_name = Path(file.filename or "악보").stem
+
     jobs[job_id] = {
         "id": job_id,
         "status": "pending",
@@ -51,6 +54,7 @@ async def upload_image(background_tasks: BackgroundTasks, file: UploadFile = Fil
         "message": "악보를 받았습니다. 분석을 시작합니다...",
         "score_id": None,
         "filepath": str(filepath),
+        "original_name": original_name,
     }
 
     background_tasks.add_task(process_image, job_id, str(filepath))
@@ -93,7 +97,7 @@ async def process_image(job_id: str, filepath: str):
             job["progress"] = 80
             job["message"] = "음표를 분석하고 색깔악보로 변환하고 있습니다..."
 
-            img_title = Path(filepath).stem
+            img_title = job.get("original_name", Path(filepath).stem)
 
             if result_path.endswith(".json"):
                 # 경량 OMR 결과 (JSON)
