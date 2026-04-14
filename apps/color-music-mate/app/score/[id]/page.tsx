@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { getJobStatus, getScore } from '@/lib/api'
 import { ColorScore as ColorScoreType } from '@/lib/color-mapping'
@@ -12,7 +12,6 @@ type Status = 'pending' | 'processing' | 'done' | 'error'
 
 export default function ScorePage() {
   const params = useParams()
-  const router = useRouter()
   const id = params.id as string
 
   const [status, setStatus] = useState<Status>('pending')
@@ -47,72 +46,84 @@ export default function ScorePage() {
   }, [status, pollStatus])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* 헤더 */}
-      <header className="bg-white border-b px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="text-2xl font-black text-gray-800 hover:text-blue-600">
-          🎨🎵 Color Music Mate
+      <header className="bg-white border-b px-4 py-3 flex items-center justify-between shrink-0">
+        <Link href="/" className="text-xl font-black text-gray-800 hover:text-blue-600 flex items-center gap-2">
+          🎨🎵 <span className="hidden sm:inline">Color Music Mate</span>
         </Link>
-        {score && (
-          <div className="flex gap-3">
-            <Link
-              href={`/teacher/${id}`}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-5 py-2 rounded-xl transition-colors"
-            >
-              교사용 화면
-            </Link>
-            <Link
-              href={`/student/${id}`}
-              className="bg-green-500 hover:bg-green-600 text-white font-bold px-5 py-2 rounded-xl transition-colors"
-            >
-              학생용 화면
-            </Link>
-          </div>
-        )}
+
+        <div className="flex gap-2">
+          {score && (
+            <>
+              <Link
+                href={`/teacher/${id}`}
+                className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-4 py-2 rounded-xl transition-colors text-sm"
+              >
+                ✏️ 교사 수정
+              </Link>
+              <Link
+                href={`/student/${id}`}
+                className="bg-green-500 hover:bg-green-600 text-white font-bold px-4 py-2 rounded-xl transition-colors text-sm"
+              >
+                👁️ 학생용
+              </Link>
+            </>
+          )}
+          <Link
+            href="/"
+            className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold px-4 py-2 rounded-xl transition-colors text-sm"
+          >
+            🏠 처음으로
+          </Link>
+        </div>
       </header>
 
-      <main className="max-w-6xl mx-auto p-6">
-        {/* 로딩 상태 */}
+      {/* 메인 콘텐츠 */}
+      <main className="flex-1 overflow-auto">
+        {/* 로딩 */}
         {status !== 'done' && status !== 'error' && (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+          <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-6">
             <div className="text-6xl mb-6 animate-bounce">🎵</div>
-            <h2 className="text-3xl font-bold text-gray-700 mb-4">{message}</h2>
-            <div className="w-full max-w-md bg-gray-200 rounded-full h-6 overflow-hidden">
+            <h2 className="text-2xl font-bold text-gray-700 mb-4">{message}</h2>
+            <div className="w-full max-w-md bg-gray-200 rounded-full h-5 overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500 rounded-full"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="text-gray-500 mt-3 text-lg">{progress}%</p>
+            <p className="text-gray-500 mt-3">{progress}%</p>
           </div>
         )}
 
-        {/* 오류 상태 */}
+        {/* 오류 */}
         {status === 'error' && (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+          <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-6">
             <div className="text-6xl mb-6">⚠️</div>
-            <h2 className="text-3xl font-bold text-red-600 mb-4">오류가 발생했습니다</h2>
-            <p className="text-gray-600 text-xl mb-8">{error ?? message}</p>
+            <h2 className="text-2xl font-bold text-red-600 mb-4">오류가 발생했습니다</h2>
+            <p className="text-gray-600 text-lg mb-6">{error ?? message}</p>
             <Link
               href="/"
-              className="bg-blue-500 hover:bg-blue-600 text-white font-bold text-xl px-8 py-4 rounded-2xl transition-colors"
+              className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-8 py-3 rounded-2xl transition-colors"
             >
               처음으로 돌아가기
             </Link>
           </div>
         )}
 
-        {/* 완료 - 악보 표시 */}
+        {/* 완료 - 악보 + 컨트롤 한 화면에 */}
         {status === 'done' && score && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2" id="color-score-content">
-              <ColorScore
-                score={score}
-                currentNoteIndex={currentNoteIndex}
-                onNoteClick={setCurrentNoteIndex}
-              />
-            </div>
-            <div className="lg:col-span-1">
+          <div className="max-w-5xl mx-auto p-4 space-y-4">
+            {/* 색깔악보 */}
+            <ColorScore
+              score={score}
+              currentNoteIndex={currentNoteIndex}
+              onNoteClick={setCurrentNoteIndex}
+              compact
+            />
+
+            {/* 재생 컨트롤 */}
+            <div className="bg-white rounded-2xl shadow-sm p-4">
               <PlaybackControls
                 score={score}
                 onNoteChange={setCurrentNoteIndex}
