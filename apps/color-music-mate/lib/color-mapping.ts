@@ -26,6 +26,7 @@ export interface ColorScore {
   title: string
   bpm: number
   key: string
+  timeSignature?: string
   notes: ColorNote[]
 }
 

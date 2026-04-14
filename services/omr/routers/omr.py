@@ -3,8 +3,12 @@
 import asyncio
 import uuid
 import shutil
+import logging
 from pathlib import Path
 from typing import Dict, Any, List
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, BackgroundTasks
 from pydantic import BaseModel
@@ -78,9 +82,11 @@ async def process_image(job_id: str, filepath: str):
         score_id = str(uuid.uuid4())
 
         try:
+            logger.info(f"[{job_id}] oemer 시작: {preprocessed_path}")
             xml_path = await loop.run_in_executor(
                 None, run_oemer, preprocessed_path, omr_output_dir
             )
+            logger.info(f"[{job_id}] oemer 완료: {xml_path}")
 
             # ── 3단계: MusicXML 파싱 ─────────────────────
             job["progress"] = 80
@@ -90,8 +96,12 @@ async def process_image(job_id: str, filepath: str):
             score_data = await loop.run_in_executor(
                 None, parse_musicxml, xml_path, score_id, img_title
             )
+            logger.info(f"[{job_id}] 파싱 완료: {len(score_data.get('notes', []))}개 음표")
 
         except Exception as omr_err:
+            import traceback
+            logger.error(f"[{job_id}] OMR 실패: {omr_err}")
+            logger.error(traceback.format_exc())
             # oemer 실패 시 데모 악보로 fallback
             job["message"] = f"OMR 인식 실패 (기본 악보 사용): {omr_err}"
             score_data = generate_demo_score(score_id)

@@ -17,6 +17,13 @@ def preprocess_image(image_path: str) -> np.ndarray:
     if img is None:
         raise ValueError(f"이미지를 읽을 수 없습니다: {image_path}")
 
+    # 이미지 크기 제한 (oemer 메모리 절약 - max 1600px 너비)
+    MAX_WIDTH = 1600
+    h, w = img.shape[:2]
+    if w > MAX_WIDTH:
+        scale = MAX_WIDTH / w
+        img = cv2.resize(img, (MAX_WIDTH, int(h * scale)), interpolation=cv2.INTER_AREA)
+
     # 그레이스케일
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 

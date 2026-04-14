@@ -31,7 +31,7 @@ DURATION_MAP = {
 
 def generate_demo_score(score_id: str, title: str = "반짝반짝 작은 별") -> Dict[str, Any]:
     notes = [colorize_note(p, i, d, m, b) for i, (p, d, m, b) in enumerate(TWINKLE_NOTES)]
-    return {"id": score_id, "title": title, "bpm": 100, "key": "C", "notes": notes}
+    return {"id": score_id, "title": title, "bpm": 100, "key": "C", "timeSignature": "4/4", "notes": notes}
 
 
 # ─── MusicXML → 색깔악보 JSON ─────────────────────────────────
@@ -58,6 +58,12 @@ def parse_musicxml(xml_path: str, score_id: str, title: str = "악보") -> Dict[
         if el.number:
             bpm = int(el.number)
             break
+
+    # 박자표 추출
+    time_sig = "4/4"
+    for ts in score.flat.getElementsByClass(m21.meter.TimeSignature):
+        time_sig = ts.ratioString  # 예: "4/4", "3/4", "6/8"
+        break
 
     # 단선율 추출 (첫 번째 파트의 상단 성부)
     notes_raw = []
@@ -96,6 +102,7 @@ def parse_musicxml(xml_path: str, score_id: str, title: str = "악보") -> Dict[
         "title": title,
         "bpm": bpm,
         "key": key_name,
+        "timeSignature": time_sig,
         "notes": notes,
     }
 

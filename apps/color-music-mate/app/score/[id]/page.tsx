@@ -46,10 +46,6 @@ export default function ScorePage() {
     return () => clearInterval(interval)
   }, [status, pollStatus])
 
-  const handleSaveImage = async () => {
-    alert('PNG 저장 기능은 준비 중입니다. (html2canvas 설치 필요)')
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
       {/* 헤더 */}
@@ -71,12 +67,6 @@ export default function ScorePage() {
             >
               학생용 화면
             </Link>
-            <button
-              onClick={handleSaveImage}
-              className="bg-purple-500 hover:bg-purple-600 text-white font-bold px-5 py-2 rounded-xl transition-colors"
-            >
-              PNG 저장
-            </button>
           </div>
         )}
       </header>
